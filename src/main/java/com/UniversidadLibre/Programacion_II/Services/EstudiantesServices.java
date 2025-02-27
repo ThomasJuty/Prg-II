@@ -20,7 +20,6 @@ public class EstudiantesServices {
             new Estudiantes(2, "Thomas", "thomas123@gmail.com", "456"),
             new Estudiantes(3, "Cristian", "cristian123", "789")
     ));
-    public List<Tareas> tareas = new ArrayList<>();
 
     public List<Estudiantes> GetEstudiantes() {
         return estudiantes;

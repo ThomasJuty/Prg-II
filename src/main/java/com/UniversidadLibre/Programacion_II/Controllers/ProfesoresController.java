@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.awt.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -59,11 +60,13 @@ public class ProfesoresController {
         profesoresServices.EliminarTarea(id);
         return "Tarea eliminada";
     }
-    @PatchMapping("/EditarTareas/{id}")
-    public Tareas EditarTareas (@PathVariable int id, @RequestBody Tareas tarea )
-    {
-        profesoresServices.EditarTarea(id,tarea);
-        return tarea;
+    @PutMapping("/EditarTareas/{id}")
+    public ResponseEntity<Tareas> actualizarTarea(@PathVariable int id, @RequestBody Tareas tareaActualizada) {
+        Optional<Tareas> tareaEditada = profesoresServices.EditarTarea(id, tareaActualizada);
+
+        return tareaEditada.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build()); // Retorna 404 si la tarea no existe
     }
+
 
 }

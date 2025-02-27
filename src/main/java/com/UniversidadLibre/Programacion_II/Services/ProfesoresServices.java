@@ -69,15 +69,19 @@ public class ProfesoresServices {
     public Optional<Tareas> EditarTarea(int id, Tareas tareaActualizada) {
         for (Tareas tarea : tareas) {
             if (tarea.getId() == id) {
+                // Actualizar el atributo si no es nulo
                 if (tareaActualizada.getTitulo() != null) tarea.setTitulo(tareaActualizada.getTitulo());
                 if (tareaActualizada.getDescripcion() != null) tarea.setDescripcion(tareaActualizada.getDescripcion());
                 if (tareaActualizada.getFechaEntrega() != null) tarea.setFechaEntrega(tareaActualizada.getFechaEntrega());
+                if (tareaActualizada.getMateria() != null) tarea.setMateria(tareaActualizada.getMateria());
                 if (tareaActualizada.getEstado() != null) tarea.setEstado(tareaActualizada.getEstado());
-                return Optional.of(tarea);
+
+                return Optional.of(tarea); // Devuelve la tarea actualizada
             }
         }
-        return Optional.empty();
+        return Optional.empty(); // Retorna vacío si no se encontró la tarea
     }
+
 
     // Eliminar tarea
     public boolean EliminarTarea(int id) {

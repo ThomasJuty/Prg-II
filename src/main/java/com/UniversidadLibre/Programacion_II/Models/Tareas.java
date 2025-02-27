@@ -6,11 +6,10 @@ public class Tareas {
 
     private int id;
     private String materia;
-
     private String titulo;
     private String descripcion;
-
     private LocalDate fechaEntrega;
+    private EstadoTarea estado;
 
     public enum EstadoTarea {
         PENDIENTE,
@@ -18,16 +17,16 @@ public class Tareas {
         COMPLETADA
     }
 
-    public Tareas(int id, String materia,String titulo, String descripcion, LocalDate fechaEntrega, EstadoTarea estado) {
+    public Tareas() {}
+
+    public Tareas(int id, String materia, String titulo, String descripcion, LocalDate fechaEntrega, EstadoTarea estado) {
         this.id = id;
         this.materia = materia;
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.fechaEntrega = fechaEntrega;
-        this.estado = EstadoTarea.PENDIENTE;
-
+        this.estado = estado;  //
     }
-    private EstadoTarea estado;
 
     public int getId() {
         return id;
