@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tareas de la Materia</title>
+  <link rel="stylesheet" href="../styles/pag_estudiante_styles.css">
+</head>
+<body>
+  <header>
+    <h1>Colegio Francisco de Asis</h1>
+  </header>
+  
+  <div class="container">
+    <h1>Lista de Tareas</h1>
+
+    <div class="dropdown">
+      <button>Estado ⬇</button>
+      <div class="dropdown-content" id="estadoFiltro">
+        <button onclick="filtrarPorEstado('Todas')">Todas</button>
+        <button onclick="filtrarPorEstado('PENDIENTE')">Pendiente</button>
+        <button onclick="filtrarPorEstado('EN_PROGRESO')">En Progreso</button>
+        <button onclick="filtrarPorEstado('COMPLETADA')">Completado</button>
+      </div>
+    </div>
+
+    <div class="dropdown">
+      <button>Materia ⬇</button>
+      <div class="dropdown-content" id="materiaFiltro"></div>
+    </div>
+
+    <div class="dropdown">
+      <button>Fecha ⬇</button>
+      <div class="dropdown-content">
+        <button onclick="ordenarPorFecha('reciente')">Más reciente</button>
+        <button onclick="ordenarPorFecha('antigua')">Más antigua</button>
+      </div>
+    </div>
+
+    <ul id="tareaLista" class="tarea-lista"></ul>
+  </div>
+
+  <script>
+    let tareas = [];
+    document.addEventListener("DOMContentLoaded", obtenerTareas);
+
+    async function obtenerTareas() {
+      try {
+        const response = await fetch("http://localhost:8080/Profesores/GetTareas");
+        if (!response.ok) throw new Error("Error al obtener tareas");
+        tareas = await response.json();
+        mostrarTareas(tareas);
+        cargarMaterias(tareas);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    function mostrarTareas(lista) {
+      const tareaListaElement = document.getElementById('tareaLista');
+      tareaListaElement.innerHTML = "";
+      lista.forEach(tarea => {
+        const li = document.createElement('li');
+        li.className = 'tarea-item';
+        li.innerHTML = `
+          <div class="tarea-info">
+            <strong>${tarea.titulo}</strong> - ${tarea.materia} - ${tarea.descripcion} <br>
+            Fecha: ${tarea.fechaEntrega}
+          </div>
+          <button onclick="actualizarEstado(${tarea.id}, 'PENDIENTE')">Pendiente</button>
+          <button onclick="actualizarEstado(${tarea.id}, 'EN_PROGRESO')">En Progreso</button>
+          <button onclick="actualizarEstado(${tarea.id}, 'COMPLETADA')">Completado</button>
+        `;
+        tareaListaElement.appendChild(li);
+      });
+    }
+
+    function cargarMaterias(lista) {
+      const materiasUnicas = [...new Set(lista.map(t => t.materia))];
+      const materiaFiltro = document.getElementById("materiaFiltro");
+      materiasUnicas.forEach(materia => {
+        const button = document.createElement("button");
+        button.textContent = materia;
+        button.onclick = () => filtrarPorMateria(materia);
+        materiaFiltro.appendChild(button);
+      });
+    }
+
+    function filtrarPorEstado(estado) {
+      const filtradas = estado === 'Todas' ? tareas : tareas.filter(t => t.estado === estado);
+      mostrarTareas(filtradas);
+    }
+
+    function filtrarPorMateria(materia) {
+      mostrarTareas(tareas.filter(t => t.materia === materia));
+    }
+
+    function ordenarPorFecha(orden) {
+      const ordenadas = [...tareas].sort((a, b) => {
+        return orden === 'reciente' ? new Date(b.fechaEntrega) - new Date(a.fechaEntrega) : new Date(a.fechaEntrega) - new Date(b.fechaEntrega);
+      });
+      mostrarTareas(ordenadas);
+    }
+
+    async function actualizarEstado(id, nuevoEstado) {
+      try {
+        await fetch(`http://localhost:8080/Profesores/EditarTareas/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ estado: nuevoEstado }),
+        });
+        tareas = tareas.map(t => t.id === id ? { ...t, estado: nuevoEstado } : t);
+        mostrarTareas(tareas);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  </script>
+</body>
+</html>

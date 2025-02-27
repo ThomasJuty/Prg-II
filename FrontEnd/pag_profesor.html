@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Profesor</title>
+    <link rel="stylesheet" href="../styles/pag_profesor_styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>Colegio Francisco de Asís</h1>
+        <h2>Bienvenido, <span id="nombreUsuario">Profesor</span></h2>
+    </header>
+
+    <div class="tareas-container">
+        <h2>Tareas</h2>
+        <button onclick="agregarTarea()">➕ Agregar Tarea</button>
+        <ul id="listaTareas"></ul>
+    </div>
+
+    <!-- Modal de edición -->
+    <div id="modalEdicion" class="modal" style="display: none;">
+        <div class="modal-contenido">
+            <h3>Editar Tarea</h3>
+            <label>Título:</label>
+            <input type="text" id="editTitulo">
+            <label>Descripción:</label>
+            <input type="text" id="editDescripcion">
+            <label>Fecha de Entrega:</label>
+            <input type="date" id="editFechaEntrega">
+            <label>Materia:</label>
+            <input type="text" id="editMateria">
+            <button onclick="guardarEdicion()">💾 Guardar</button>
+            <button onclick="cerrarModal()">❌ Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        let tareas = [];
+        let tareaEditando = null;
+
+        function cargarTareas() {
+            fetch("http://localhost:8080/Profesores/GetTareas")
+                .then(response => response.json())
+                .then(data => {
+                    tareas = data;
+                    mostrarTareas();
+                })
+                .catch(error => console.error("Error al cargar tareas:", error));
+        }
+
+        function mostrarTareas() {
+            const lista = document.getElementById("listaTareas");
+            lista.innerHTML = "";
+            tareas.forEach(tarea => {
+                const item = document.createElement("li");
+                item.innerHTML = `
+                    <strong>${tarea.titulo}</strong> - ${tarea.descripcion} 
+                    (Entrega: ${tarea.fechaEntrega}, Materia: ${tarea.materia})
+                    <br>
+                    <button onclick="editarTarea(${tarea.id})">✏️ Editar</button>
+                    <button onclick="eliminarTarea(${tarea.id})">❌ Eliminar</button>
+                `;
+                lista.appendChild(item);
+            });
+        }
+
+        function agregarTarea() {
+            const titulo = prompt("Título de la tarea:");
+            const descripcion = prompt("Descripción de la tarea:");
+            const fechaEntrega = prompt("Fecha de entrega (YYYY-MM-DD):");
+            const materia = prompt("Materia de la tarea:");
+
+            if (titulo && descripcion && fechaEntrega && materia) {
+                const nuevaTarea = { titulo, descripcion, fechaEntrega, materia };
+
+                fetch("http://localhost:8080/Profesores/AgregarTareas", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(nuevaTarea)
+                })
+                .then(response => response.json())
+                .then(tarea => {
+                    tareas.push(tarea);
+                    mostrarTareas();
+                })
+                .catch(error => console.error("Error al agregar tarea:", error));
+            }
+        }
+
+        function editarTarea(id) {
+            tareaEditando = tareas.find(t => t.id === id);
+
+            if (tareaEditando) {
+                document.getElementById("editTitulo").value = tareaEditando.titulo;
+                document.getElementById("editDescripcion").value = tareaEditando.descripcion;
+                document.getElementById("editFechaEntrega").value = tareaEditando.fechaEntrega;
+                document.getElementById("editMateria").value = tareaEditando.materia;
+
+                document.getElementById("modalEdicion").style.display = "block";
+            }
+        }
+
+        function guardarEdicion() {
+            if (!tareaEditando) return;
+
+            const tareaActualizada = {
+                id: tareaEditando.id,  // Se incluye el ID en la actualización
+                titulo: document.getElementById("editTitulo").value,
+                descripcion: document.getElementById("editDescripcion").value,
+                fechaEntrega: document.getElementById("editFechaEntrega").value,
+                materia: document.getElementById("editMateria").value
+            };
+
+            fetch(`http://localhost:8080/Profesores/EditarTareas/${tareaEditando.id}`, {
+                method: "PUT", // Se usa PUT en lugar de PATCH
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(tareaActualizada)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error al editar la tarea");
+                }
+                return response.json();
+            })
+            .then(() => {
+                cargarTareas(); // Se vuelve a cargar la lista desde el servidor
+                cerrarModal();
+            })
+            .catch(error => console.error("Error al editar tarea:", error));
+        }
+
+        function eliminarTarea(id) {
+            if (confirm("¿Estás seguro de eliminar esta tarea?")) {
+                fetch(`http://localhost:8080/Profesores/DeleteTareas/${id}`, {
+                    method: "DELETE"
+                })
+                .then(() => {
+                    tareas = tareas.filter(t => t.id !== id);
+                    mostrarTareas();
+                })
+                .catch(error => console.error("Error al eliminar tarea:", error));
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById("modalEdicion").style.display = "none";
+            tareaEditando = null;
+        }
+        
+        cargarTareas();
+    </script>
+    
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-contenido {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            width: 40%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        input {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        button {
+            margin: 5px;
+            padding: 8px;
+            cursor: pointer;
+        }
+    </style>
+
+</body>
+</html>
